@@ -11,7 +11,7 @@ p = pyaudio.PyAudio()
 
 channels = 1
 rate = 16000
-chunksize = 1
+chunksize = 3
 formataudio = pyaudio.paInt16
 saplesize = 2
 
@@ -31,8 +31,9 @@ def stop_recording():
 
 
 def speech_recognition():
-    model = WhisperModel('tiny.en', device='cpu', compute_type='int8')
+    model_global = WhisperModel('tiny.en', device='cpu', compute_type='int8')
     while not messages.empty():
+        model = model_global
         file = "temp.wav"
         frames = recordings.get()
 
@@ -51,21 +52,19 @@ def speech_recognition():
 
 
 def record(chunk=1024):
-
-    stream = p.open(format=formataudio, channels=channels, rate=rate, input=True, input_device_index=1,
-                    frames_per_buffer=chunk)
-
-    frames = []
+    stream_global = p.open(format=formataudio, channels=channels, rate=rate, input=True, input_device_index=1,
+                           frames_per_buffer=chunk)
 
     while not messages.empty():
+        frames = []
+        stream = stream_global
         data = stream.read(chunk)
         frames.append(data)
         if len(frames) >= (rate * chunksize) / chunk:
             recordings.put(frames.copy())
-            frames = []
 
-    stream.stop_stream()
-    stream.close()
+    stream_global.stop_stream()
+    stream_global.close()
     p.terminate()
 
 
