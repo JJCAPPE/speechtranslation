@@ -1,9 +1,12 @@
 import os
-from faster_whisper import WhisperModel
-import pyaudio
+import time
+import wave
 from queue import Queue
 from threading import Thread
-import wave
+
+import pyaudio
+from colorama import Fore
+from faster_whisper import WhisperModel
 
 messages = Queue()
 recordings = Queue()
@@ -18,7 +21,6 @@ saplesize = 2
 
 def start_recording():
     messages.put(True)
-    print("Starting recording...")
     recording = Thread(target=record)
     recording.start()
     transcribe = Thread(target=speech_recognition)
@@ -26,14 +28,14 @@ def start_recording():
 
 
 def stop_recording():
-    print(messages.get())
-    print("Stopped recording.")
+    messages.get()
+    print(f"{Fore.LIGHTRED_EX}Recording stopped.{Fore.RESET}")
 
 
 def speech_recognition():
-    model_global = WhisperModel('tiny.en', device='cpu', compute_type='int8')
+    model = WhisperModel('tiny.en', device='cpu', compute_type='int8')
     while not messages.empty():
-        model = model_global
+
         file = "temp.wav"
         frames = recordings.get()
 
@@ -43,42 +45,47 @@ def speech_recognition():
         wf.setframerate(16000)
         wf.writeframes(b''.join(frames))
         wf.close()
-
+        start = time.time()
         segments, info = model.transcribe(file)
         for segment in segments:
-            print(segment.text)
+            print(f"{segment.text} --- {Fore.RED}{time.time() - start}{Fore.RESET}")
 
         os.remove(file)
 
 
 def record(chunk=1024):
-    stream_global = p.open(format=formataudio, channels=channels, rate=rate, input=True, input_device_index=1,
-                           frames_per_buffer=chunk)
+    stream = p.open(format=formataudio, channels=channels, rate=rate, input=True, input_device_index=1,
+                    frames_per_buffer=chunk)
+
+    frames = []
 
     while not messages.empty():
-        frames = []
-        stream = stream_global
+
         data = stream.read(chunk)
         frames.append(data)
         if len(frames) >= (rate * chunksize) / chunk:
             recordings.put(frames.copy())
+            frames = []
 
-    stream_global.stop_stream()
-    stream_global.close()
+    stream.stop_stream()
+    stream.close()
     p.terminate()
 
 
 def main():
-    print("Press Enter to start recording")
+    print(f"{Fore.YELLOW}Press 'S' to start recording, or 'Q' to stop recording.{Fore.RESET}")
+
     try:
         while True:
-            input()
-            start_recording()
-            stop_key = input("Press Enter to stop recording")
-            if stop_key:
+            user_input = input()
+            if user_input.lower() == 's':
+                start_recording()
+                print(f"{Fore.LIGHTGREEN_EX}Recording started...{Fore.RESET}")
+            elif user_input.lower() == 'q':
                 stop_recording()
+                break
     except KeyboardInterrupt:
-        print("\nRecording stopped.")
+        print("\nExited recording.")
 
 
 if __name__ == "__main__":
