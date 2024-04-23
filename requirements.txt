@@ -1,3 +1,4 @@
+pyaudio
 streamlit
 deep-translator
 faster-whisper
