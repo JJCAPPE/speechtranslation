@@ -1,11 +1,11 @@
 import os
-import time
 import wave
 from queue import Queue
 from threading import Thread
-from deep_translator import GoogleTranslator
+
 import pyaudio
-from colorama import Fore
+import streamlit as s
+from deep_translator import GoogleTranslator
 from faster_whisper import WhisperModel
 
 messages = Queue()
@@ -19,20 +19,19 @@ formataudio = pyaudio.paInt16
 saplesize = 2
 
 
-def start_recording():
+def start_recording(language):
     messages.put(True)
     recording = Thread(target=record)
     recording.start()
-    transcribe = Thread(target=speech_recognition)
+    transcribe = Thread(target=speech_recognition(language))
     transcribe.start()
 
 
 def stop_recording():
     messages.get()
-    print(f"{Fore.LIGHTRED_EX}Recording stopped.{Fore.RESET}")
 
 
-def speech_recognition():
+def speech_recognition(langauge):
     model = WhisperModel('tiny.en', device='cpu', compute_type='int8')
     while not messages.empty():
 
@@ -45,12 +44,10 @@ def speech_recognition():
         wf.setframerate(16000)
         wf.writeframes(b''.join(frames))
         wf.close()
-        start = time.time()
         segments, info = model.transcribe(file)
         for segment in segments:
-            translated = GoogleTranslator(source='en', target='bg').translate(segment.text)
-            print(f"{Fore.YELLOW}{segment.text} --- {Fore.MAGENTA}{translated} --- {Fore.RED}{time.time() - start}{Fore.RESET}")
-
+            translated = GoogleTranslator(source='en', target=langauge).translate(segment.text)
+            s.title(translated)
         os.remove(file)
 
 
@@ -74,23 +71,25 @@ def record(chunk=1024):
 
 
 def main():
-    print(f"{Fore.YELLOW}Press 'S' to start recording, or 'Q' to stop recording.{Fore.RESET}")
+    s.title("Choose a Language")
 
-    try:
-        while True:
-            user_input = input()
-            if user_input.lower() == 's':
-                start_recording()
-                print(f"{Fore.LIGHTGREEN_EX}Recording started...{Fore.RESET}")
-            elif user_input.lower() == 'q':
-                stop_recording()
-                break
-    except KeyboardInterrupt:
-        print("\nExited recording.")
+    language = s.selectbox("Select Language", GoogleTranslator().get_supported_languages(as_dict=True), format_func=lambda x: x, help="search")
+
+    col1, col2 = s.columns(2)
+
+    with col1:
+        if s.button("Start Recording") and language:
+            start_recording(language)
+
+    with col2:
+        if s.button("Stop Recording"):
+            stop_recording()
+
 
 def main2():
     langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
     print(langs_dict)
+
 
 if __name__ == "__main__":
     main()
