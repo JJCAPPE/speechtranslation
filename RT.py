@@ -3,7 +3,7 @@ import time
 import wave
 from queue import Queue
 from threading import Thread
-
+from deep_translator import GoogleTranslator
 import pyaudio
 from colorama import Fore
 from faster_whisper import WhisperModel
@@ -48,7 +48,8 @@ def speech_recognition():
         start = time.time()
         segments, info = model.transcribe(file)
         for segment in segments:
-            print(f"{segment.text} --- {Fore.RED}{time.time() - start}{Fore.RESET}")
+            translated = GoogleTranslator(source='en', target='bg').translate(segment.text)
+            print(f"{Fore.YELLOW}{segment.text} --- {Fore.MAGENTA}{translated} --- {Fore.RED}{time.time() - start}{Fore.RESET}")
 
         os.remove(file)
 
@@ -87,6 +88,9 @@ def main():
     except KeyboardInterrupt:
         print("\nExited recording.")
 
+def main2():
+    langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
+    print(langs_dict)
 
 if __name__ == "__main__":
     main()
