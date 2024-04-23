@@ -1,0 +1,4 @@
+numpy
+streamlit
+deep-translator
+faster-whisper
