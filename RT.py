@@ -7,6 +7,7 @@ import pyaudio
 import streamlit as s
 from deep_translator import GoogleTranslator
 from faster_whisper import WhisperModel
+from functools import lru_cache
 
 messages = Queue()
 recordings = Queue()
@@ -18,6 +19,35 @@ chunksize = 3
 formataudio = pyaudio.paInt16
 saplesize = 2
 
+stream = None
+
+
+class SessionState:
+    def __init__(self):
+        self._session_id = None
+        self._app_closed = False
+
+    def get_state(self):
+        return self._app_closed
+
+    def set_state(self, state):
+        self._app_closed = state
+
+    def get_session_id(self):
+        return self._session_id
+
+    def set_session_id(self, session_id):
+        self._session_id = session_id
+
+session_state = SessionState()
+
+@lru_cache(maxsize=None)
+def app_closer():
+    stop_recording()
+    session_id = s.report_thread.get_report_ctx().session_id
+    if session_state.get_session_id() == session_id:
+        session_state.set_state(True)
+        
 
 def start_recording(language):
     messages.put(True)
@@ -29,6 +59,10 @@ def start_recording(language):
 
 def stop_recording():
     messages.get()
+    if stream:
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
 
 
 def speech_recognition(langauge):
@@ -73,18 +107,17 @@ def record(chunk=1024):
 def main():
     s.title("Choose a Language")
 
-    language = s.selectbox("Select Language", GoogleTranslator().get_supported_languages(as_dict=True), format_func=lambda x: x, help="search")
+    stopper = s.button("Stop Recording")
 
-    col1, col2 = s.columns(2)
+    language = s.selectbox("Select Language", GoogleTranslator().get_supported_languages(as_dict=True))
 
-    with col1:
-        if s.button("Start Recording") and language:
-            start_recording(language)
-
-    with col2:
-        if s.button("Stop Recording"):
-            stop_recording()
-
+    if language:
+        start_recording(language)
+    
+    if stopper:
+        stop_recording()
+        app_closer()
+        s.stop()
 
 def main2():
     langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
