@@ -119,7 +119,7 @@ def main():
         app_closer()
         s.stop()
 
-def main2():
+def mainsec():
     langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
     print(langs_dict)
 
