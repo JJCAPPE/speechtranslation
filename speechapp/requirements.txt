@@ -1,0 +1,6 @@
+os
+wave
+pyaudio
+deep_translator
+faster_whisper
+functools

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@vaadin/grid": "^24.3.12"
+  }
+}

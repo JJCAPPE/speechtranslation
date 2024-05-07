@@ -120,9 +120,14 @@ def main():
         s.stop()
 
 def mainsec():
+    options = ""
     langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
-    print(langs_dict)
+    for lang, code in langs_dict.items():
+        options += f'<div class="language-list-item" data-lang="{code}"> {lang.capitalize()} </div>\n'
 
+
+
+    print(options)
 
 if __name__ == "__main__":
-    main()
+    mainsec()
