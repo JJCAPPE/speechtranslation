@@ -20,6 +20,6 @@ import debug_toolbar
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('mainapp/', include('mainapp.urls')), #any url requests from mainapp should be handled by urls.py
+    path('main/', include('mainapp.urls')), #any url requests from mainapp should be handled by urls.py
     path('__debug__/', include(debug_toolbar.urls))
 ]

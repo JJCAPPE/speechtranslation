@@ -9,6 +9,10 @@ django-debug-toolbar = "*"
 pyaudio = "*"
 deep-translator = "*"
 faster-whisper = "*"
+djangorestframework = "*"
+daphne = "*"
+channels = "*"
+decouple = "*"
 
 [dev-packages]
 
